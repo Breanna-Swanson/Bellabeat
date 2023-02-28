@@ -1,0 +1,194 @@
+
+##Ask
+Business Task Summary
+The goal is to grow the Bellabeat wearable tech and wellness market by producing functional and appealing products, accomplished by analyzing trends and applying relevant strategies.
+What is the purpose of the analysis?
+The purpose of the analysis is to gain insight into the metrics of how customers use non-Bellabeat smart devices, which can provide insights into how Bellabeat is received by its audience. We will focus on the Bellabeat device named “Ivy”.
+What are we hoping to learn from it?
+What are some trends in smart device usage? How inconsistent is the user experience?
+
+According to a study found on Precedence Research, the global wearable market is set to grow by more than 13% by 2030. With the wrist  That is close to 400 billion dollars.
+<https://www.precedenceresearch.com/wearable-technology-market>
+
+###How could these trends apply to Bellabeat customers?  
+
+This is a prime opportunity to introduce new customers to Bellabeat and it’s unique and artful approach to the benefits of gentle health tracking. Earthy vibes with techy abilities, use this data to help this community bloom into their best health chapter.   
+
+In an accelerated society, those who look for the opportunity to ground themselves will be keen to venture into Bellabeat.  
+
+###How could these trends help influence Bellabeat marketing strategy?
+
+As society accelerates, we want the benefits of data collection but value the ability to participate on our own terms. Those who look for the opportunity to ground themselves while embracing the modern will be keen to venture into BellaBeat's 'art is life’ approach to wearable technology. This campaign should focus on social media using unwind and meditate. 
+
+The wearable tech market is expected by many projections to grow significantly by 2030. Also expected to grow is the market for period tracking apps.
+
+Does Bellabeat want to focus on wearables or their app which requires a monthly subscription?
+Many other wearables handle other tasks besides activity tracking, ie., notifications, music, apps, gps. What market will only want single use tech? Why is it appealing?
+
+
+##Prepare
+ A clear description of all data sources used.
+https://www.kaggle.com/datasets/arashnic/fitbit  
+
+
+The data provided by Bellabeat is actually not the company’s own data, but a dataset from FitBit collected by a survey from Amazon Mechanical Turk that only included 33 users and is from 2016. The use of wearables has increased considerably since then. White this data may have been RELIABLE in 2016, it's age will definitely not reflect the advancements in the technology of 2023.
+The dataset was downloaded directly from the link provided by Bellabeat and is stored in the cloud through Google Suite for easy sharing and retrieval.
+The data is organized by measured activities. Measurables include dates, type of activity and duration, and caloric expense. 
+
+We will focus on the Daily Activity and Sleep Day datasets.  
+
+##Process
+Documentation of any cleaning or manipulation of the data.
+First let’s take a look at our tables. We want to see when users are using their wearable device.
+If we analyze the dailyActivity_merged.csv, we can see daytime usage.
+If we analyze the sleepDay_merged.csv, we can see night time usage.
+After the dataset is downloaded from:
+<https://www.kaggle.com/datasets/arashnic/fitbit> to our secure Google Drive
+Link: dailyActivity_merged.csv
+<https://drive.google.com/file/d/1rEbQoeqe-jP3AV6UETkdEPknyax49itD/view?usp=share_link>
+Link: sleepDay_merged.csv <https://drive.google.com/file/d/1s75sxAiO5mE2_3tEPafQKAOIi-IimRut/view?usp=share_link>
+We will import both data frames into a new Rstudio/Posit project.  
+Once data frames are imported we can organize them to fit our needs.
+We can load the tidyverse package for our cleaning, manipulation and analyzing needs.  
+
+Install
+
+
+We DO NOT want to restart R prior to installing.
+Load
+
+```{r}
+library(tidyverse)
+```
+OR  
+Location of directory in this case, working in R natively, is set to
+**setwd("/Users/breannaswanson/Desktop/COURSERA/BELLABEAT/Fitabase Data 4.12.16-5.12.16"**
+
+
+```{r}
+Day<- read.csv('dailyActivity_merged.csv')
+Night<- read.csv('sleepDay_merged.csv')
+
+```
+
+View the first 6 rows of our new data frames.
+
+
+```{r}
+head(Day)
+head(Night)
+```
+
+What are our column names and are any overlapping? How many columns are there?
+
+```{r}
+colnames(Day)
+```
+
+```{r}
+ncol(Day)
+
+```
+
+```{r}
+colnames(Night)
+```
+```{r}
+ncol(Night)
+```
+Both data frames contain variables for Id and Date and various other metrics. Because we are looking for inconsistent device use, we will not clean to remove 0 entries.
+Lets determine how many rows are in each dataframe:
+```{r}
+nrow(Day)
+```
+```{r}
+nrow(Night)
+```
+```{r}
+distinct_Day<- Day %>% 
+  distinct(Id) %>% 
+  nrow()
+
+```
+```{r}
+distinct_Night<- Night %>% 
+  distinct(Id) %>% 
+  nrow()
+
+
+```
+
+We should make sure our dates match up so we can combine our dataframes later.
+
+```{r}
+Day$Sleep_Date <- as.Date(Day$ActivityDate, format = "%m/%d/%Y")
+
+```
+
+```{r}
+Night$Sleep_Date <- as.Date(Night$SleepDay, format = "%m/%d/%Y")
+```
+To see how many participants do not wear the device consistently, we will search for TotalSteps with zero entries.
+
+
+##Analyze  
+After running the code to find distinct users in each dataframe we can already see that even less users wear the device to track their sleep.
+
+
+
+```{r}
+day_only<- c(distinct_Night/distinct_Day)
+day_only
+
+```
+Of the 33 participants, only 24 use it at night or 72%  
+
+
+```{r}
+zero_dayId<- Day %>% 
+  filter(TotalSteps == 0) %>% 
+  distinct(Id) 
+
+```
+```{r}
+nrow(zero_dayId)
+```
+ We have 15 of 33 users that inconsistently use their device during the day.
+
+From our Day dataframe, we will count the number of 0 entries of TotalSteps
+We are making the assumption the participant did not puto on the device if there are no entries.
+Produce a new dataframe “zero_day” where the Id column reflects 0
+```{r}
+zero_day<- Day[Day$TotalSteps == 0,]
+nrow(zero_day)
+
+```
+
+15 participants have not used their device for a total of 77 days.
+
+```{r}
+steps_summary <- Day %>%
+  group_by(Id) %>%
+  summarize(avg_steps = mean(TotalSteps), min_steps = min(TotalSteps))
+
+```
+
+Our goal is to show the number of participanta with inconsistent use. The green represents the minimum total steps logged. We assume the baseline of zero to mean no steps logged and the patient did not wear or charge the device.
+```{r}
+ggplot(data = steps_summary, aes(x = Id)) +
+  geom_point(aes(y = avg_steps, color = "Average")) +
+  geom_point(aes(y = min_steps, color = "Minimum")) +
+  scale_color_manual(values = c("Average" = "blue", "Minimum" = "green"), name = "Steps") +
+  ylab("Total Steps")
+
+
+```
+
+##Act
+As we see, many participants do not use their devices consistently. They may forget to charge it simply not put it on. Per reviews found at:
+<https://techcrunch.com/2021/11/12/bellabeat-ivy-bracelet-health-tracker-review/>
+and
+<https://www.inverse.com/input/reviews/bellabeat-ivy-wellness-fitness-sleep-tracker-review>
+
+Some may find the cost of the device prohibitive. While many are willing to spend much more than $250 for a wearable, the lack of native interactive features is considered a downfall. Any interaction still requires accessing technology through their phone or tablet. Since 2016, the amount of interaction with technology has increased dramatically, we are almost dependent on it, for better or worse. Without the interaction, clients are apt to forget about the device altogether.
+Even haptic feedback would be an improvement, in the form of a movement reminder or calendar and message prompt. A wearable should aim to become an integral part of the daily routine.
